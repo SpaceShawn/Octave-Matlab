@@ -1,0 +1,87 @@
+%#!/usr/bin/octave -qf --traditional
+%# this is the bonus assignment
+%# SB_ namespace for user defined functions
+
+arg_list = argv ();
+
+num = str2int(arg_list{1});
+fprintf (program_name () . 'You entered: ' . num);
+
+function [area] = Simpsons38 (Fun,a,b)
+    i = 3; %# Simpsons rule should only be evaluated with even subintervals!
+    if (i%2>0)
+        fprintf ('Simpson\'s rule must be evaluated with even subintervals!');
+    endif
+    SimpsonDifference = 1; %# initialize SimpsonDifference to allow loop execution
+
+    %# execute Simpson's loop if the number of intervals is even and difference is 
+    %# still not less than 0.1
+    while (i%2>0 && SimpsonDifference >= 0.1)
+        i = i * 2; %# double the interval count
+        h = a+b/i; %# calculate the interval width
+
+        %# first sum will be evaluated for 2,3, 5,6, 8,9, 11,12 etc.
+        %# first sum will be multiplied by 3
+        first_sum = 0; %#initialize
+
+        %# skip the first term, Fun(a) will be added manually
+        j = a + h;
+        while j<b
+            j = j;  %# term for the first evaluation, Fun(j)
+            k = j + h; %# term for the second evaluation, Fun(k)
+            j = j + 3; %# increment for the next loop
+            first_sum = first_sum + Fun(j) + Fun(k);
+        endwhile;
+
+        %# second sum will be evaluated for 4,7,10,13, etc.
+        %# second sum will be multiplied by 2
+        second_sum = 0; %# initialize
+
+        %# skip to the fourth term
+        j = a + h + h;
+        while j < (b-h)
+            second_sum = second_sum + Fun(j);
+            j = j + 3;
+        endwhile;
+
+        %# save old Simpson sum
+        old_area = area;
+
+        %# add up all the areas for new area
+        area = (3*h/8)*(Fun(a) + Fun(b) + 3*first_sum + 2*second_sum);
+
+        %# calculate the difference between the last Simpson sum
+        SimpsonDifference = old_area - area;
+    endwhile;
+endfunction;
+
+%# function for cross-sectional area of a beam
+function [result] = SB_crossSectionalArea(x)
+    R = 50;
+    r = 20;
+    f = pi * ( R - (R-r)/L * x )^2;
+endfunction;
+
+%# function for the normal strain in a beam
+%# P : force applied
+%# E : Modulus of Elasticity, 70 GPa
+%# A : Cross-sectional area of the beam
+function [normal_strain] = SB_normalStrain(P,A)
+    E = 70*10^9;
+    normal_strain = P / ( E * A );
+endfunction;
+
+%# function to calculate the displacement of a point x = x_p along the beam
+function [displacement] = SB_pointDisplacement(x_p,P,A)
+    E = 70*10^9;
+    displacement = P / ( E * A );
+endfunction;
+
+function y = f (x)
+endfunction
+
+%# calculate the displacement with QUAD
+QUAD
+
+%# plot the calculated displacement as a function of x
+plot(x, y); legend('label')
