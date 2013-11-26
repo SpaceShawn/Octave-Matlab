@@ -15,18 +15,18 @@ global x=0;
 global y=0;
 global R=50;
 global r=20;
-global L=2; % 2 meters %L = input('Enter a number to represent the beam length in metres: ');
+global L; 
 global t=a:1:L; % legend('-DynamicLegend'); % for plotting
 global h;
 global cmap = hsv(6);
-global P=20000; % 20 kN %P = input('Enter a number to represent the force to place on the beam: ');
+L=12;%L = input('Enter a number to represent the beam length in metres: ');
+global P;
+P=100000;%P = input('Enter a number to represent the force to place on the beam: ');
 global E = 70*10^9;
 global result = 1; % initialize to allow execution;
-global iteration = 0;
 
 function [result] = Simpsons38 (Fun,a,b)
-	global iteration;
-    global result;
+	global result;
     global a;
     global L;
     global h;
@@ -43,11 +43,9 @@ function [result] = Simpsons38 (Fun,a,b)
 
     % execute Simpson's loop if the number of intervals is even and difference not less than 0.1
     do
-        iteration = iteration+1;
         i = i * 2; % double the interval count
         points = i+1;
-        iteration_title = strcat('Simspon 3/8: iteration:', int2str(iteration),' intervals:', int2str(i));
-        fprintf (iteration_title);
+        iteration_title = strcat('Simspon 3/8:', int2str(i), ' intervals');
         result_matrix = size(points,2);
 
         fprintf('\r\nSubintervals: %d\r\n', i);
@@ -114,7 +112,7 @@ function [result] = Simpsons38 (Fun,a,b)
         
         % plotting
         fprintf([repmat('%e\t', 1, size(result_matrix, 2)) '\n'], result_matrix');
-        hold on;
+        % don't run this everytime % hold on;
         t = a:h:L;
         %plot ( t, result_matrix(2,:), 'Color', cmap( mod(i,7) , : ) );
         plot ( t, result_matrix(2,:),'b');
@@ -172,16 +170,14 @@ endfunction; SB_pointDisplacement(10); % test this function
 q = quad(SB_anon_comDis,a,L,0.1);
 fprintf ('QUAD result: %e\r\n', q);
 
-% evaluate user-defined Simpsons38 function 
-Simpsons38( @SB_pointDisplacement, 0, L);
-
 % plot the QUAD calculated displacement as a function of x
-t = a:1:L;
-subplot(a,1,L);
+t = a:L;
 plot (t,SB_loose_comDis,'r--o');
 hold on;
 %legend ('1','2','QUAD');
 legend('QUAD');
 % plot(x, y); legend('label')
 
+% evaluate user-defined Simpsons38 function 
+Simpsons38( @SB_pointDisplacement, 0,L);
 hold off;
