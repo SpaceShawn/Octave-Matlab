@@ -1,11 +1,4 @@
 %#!/usr/bin/octave -qf --traditional
-% this is the bonus assignment
-% SB_ namespace for user defined functions
-
-%arg_list = argv ();
-
-%num = str2int(arg_list{1});
-%fprintf ('' . program_name () . ' You entered: ' . num);
 
 % defines: constants and initial conditions
 format long;
@@ -13,24 +6,28 @@ global a=0;
 global b=0;
 global x=0;
 global y=0;
-global R=50;
-global r=20;
-global abserr = 0.1; % threshold to continue loop
+global R=50*10^-3; % convert to meters
+global r=20*10^-3; % convert meter
+global relerr = 0.1; % threshold to continue loop
 global L=2; % 2 meters %L = input('Enter a number to represent the beam length in metres: ');
 global t=a:1:L; % legend('-DynamicLegend'); % for plotting
 global h;
-global cmap = hsv(6);
 global P=20000; % 20 kN %P = input('Enter a number to represent the force to place on the beam: ');
-global E = 70*10^9;
+global E = 70*10^9; % modulus of elasticity
 global result = 1; % initialize to allow execution;
 global iteration = 0;
+global cmap = hsv(6);
 global legend_array;
 global old_legend_array;
-
+title('{Simpson 3/8 evaluation for displacement on a beam}','FontSize',14)
+xlabel('x - position on beam');
+ylabel('\delta - displacement');
+fprintf('Using:\r\n P=%f newtons, R=%f meters, r=%f meters, L=%f meters, E=%e Pa \r\n',P,R,r,L,E);
+% user-defined function to take another function and two input parameters and return an integral result
 function [result] = Simpsons38 (Fun,a,b)
 	global iteration;
     global result;
-	global abserr;  
+	global relerr;  
     global a;
     global L;
     global h;
@@ -50,13 +47,13 @@ function [result] = Simpsons38 (Fun,a,b)
     do
         iteration = iteration+1;
         points = i+1;
-		fprintf('  Simpson 3/8: iteration:%d\r\n',iteration);
+		fprintf('\r\nSimpson 3/8: iteration:%d\r\n',iteration);
         iteration_title = strcat('  Simspon 3/8: intervals:', int2str(i));
         result_matrix = size(points,2);
 
         fprintf('  Subintervals: %d\r\n', i);
         fprintf('  Points: %d\r\n', points);
-            h = (a+b)/i; % calculate the interval width
+		h = (a+b)/i; % calculate the interval width
         fprintf('  Interval width: %f\r\n', h);
 
         % evaluate first term
@@ -65,13 +62,14 @@ function [result] = Simpsons38 (Fun,a,b)
         result_matrix(1,round(a/h+1)) = [a]; % store x value
         result_matrix(2,round(a/h+1)) = [first_term]; % store y value
 
-            % first sum will be evaluated for 2,3, 5,6, 8,9, 11,12 etc.
-            % first sum will be multiplied by 3
-            first_sum = 0; %initialize
-            % skip to the second term
-            j = a + h;
+		% first sum will be evaluated for 2,3, 5,6, 8,9, 11,12 etc.
+		% first sum will be multiplied by 3
+		first_sum = 0; %initialize
+		% skip to the second term
+		j = a + h;
         interval = 1;
         fprintf('  >>Calculating first_sum\r\n');
+		
         while (j<(b-h))
             l = j;
             k = j + h; % term for the second evaluation, Fun(k)
@@ -111,17 +109,17 @@ function [result] = Simpsons38 (Fun,a,b)
 
         % add up all the results for new result
         result = (3*h/8)*(first_term + 3*first_sum + 2*second_sum + last_term);
-		fprintf ('  Result: %e\r\n',result);
+		fprintf ('  Result: %e meters\r\n',result);
 
         % calculate the difference between the last Simpson sum
-        SimpsonDifference = old_result - result;
-        fprintf('  Simpson Difference:%e\r\n',SimpsonDifference);
+        SimpsonDifference = abs( ( (result - old_result) / result) * 100 );
+        fprintf('  Simpson Difference:%e percent\r\n',SimpsonDifference);
         
         % plotting
         fprintf([repmat('%e\t', 1, size(result_matrix, 2)) '\n'], result_matrix');
         hold on;
         t = a:h:L;
-        p = plot ( t, result_matrix(2,:), 'Color', cmap( mod(i,7) , : ) );
+        p = plot ( t, result_matrix(2,:), 'Color', cmap( mod(iteration,7) , : ) );
 		set(p,'userdata',iteration_title);
 		
         %plot ( t, result_matrix(2,:),'b');
@@ -129,10 +127,10 @@ function [result] = Simpsons38 (Fun,a,b)
 
         i = i * 2; % double the interval count
 
-    until (SimpsonDifference <= abserr); fprintf('\r\nHit exit condition\r\n\r\n');
+    until (SimpsonDifference <= relerr); fprintf('\r\nHit exit condition\r\n\r\n');
 	%..collect labels from each curve and put up legend
 	fprintf('children:%d\r\n',iteration);
-	legend('3 subintervals','6 subintervals'); 
+	legend('3 subintervals','6 subintervals','12 subintervals','24 subintervals'); 
 	iteration = 0;
 endfunction;
 
@@ -187,14 +185,13 @@ endfunction; SB_pointDisplacement(10); % test this function
 % calculate the displacement with QUAD
 q = quad(SB_anon_comDis,a,L,0.1);
 fprintf ('integrate fun(P ./ E) * ( 1 ./ ( pi * ( ( R - ((R-r)/L)*x) ).^2 ) ) between [%d,%d]\r\n',a,L);
-fprintf ('quad(fun,a,L,0.1) = %e\r\n', q);
+fprintf ('quad(fun,a,L,0.1) = %e meters\r\n', q);
 
 % evaluate user-defined Simpsons38 function 
-Simpsons38( @SB_pointDisplacement, 0, L);
-
+final_answer = Simpsons38( @SB_pointDisplacement, 0, L);
 
 % plot the QUAD calculated displacement as a function of x
-%t = a:1:L;
+t = a:1:L;
 %subplot(a,1,L);
 %legend ('1','2');
 hold off;
